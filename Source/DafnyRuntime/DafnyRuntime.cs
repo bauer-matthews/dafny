@@ -663,7 +663,7 @@ namespace Dafny
       if (values is ICollection<Pair<U, V>> collection) {
         d = new Dictionary<U, V>(collection.Count);
       } else {
-        d = new Dictionary<U, V>();  
+        d = new Dictionary<U, V>();
       }
 #endif
       var hasNullValue = false;
@@ -931,7 +931,16 @@ namespace Dafny
         return other;
       else if (other.Count == 0)
         return this;
+#if DAFNY_STRICT_SEQUENCE
+      // Strict Concat
+      T[] a = new T[this.Elements.Length + other.Elements.Length];
+      System.Array.Copy(Elements, 0, a, 0, Elements.Length);
+      System.Array.Copy(other.Elements, 0, a, Elements.Length, other.Elements.Length);
+      return new ArraySequence<T>(a);
+#else
+      // Lazy Concat
       return new ConcatSequence<T>(this, other);
+#endif
     }
     public bool Contains<G>(G g) {
       if (g == null || g is T) {
@@ -1023,6 +1032,8 @@ namespace Dafny
       }
     }
   }
+
+
   internal class ConcatSequence<T> : Sequence<T> {
     // INVARIANT: Either left != null, right != null, and elmts == null or
     // left == null, right == null, and elmts != null
